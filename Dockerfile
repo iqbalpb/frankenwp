@@ -70,7 +70,8 @@ RUN install-php-extensions \
     zip \
     # See https://github.com/Imagick/imagick/issues/640#issuecomment-2077206945
     imagick/imagick@master \
-    opcache
+    opcache \
+    redis
 
 
 RUN cp $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini

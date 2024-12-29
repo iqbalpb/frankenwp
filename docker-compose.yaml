@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  wordpress:
+    build:
+      context: .  # Use the current directory where the Dockerfile is located
+      dockerfile: Dockerfile  # Specify the Dockerfile name
+    restart: always
+    ports:
+      - "${WORDPRESS_PORT:-8200}:80"  # HTTP port from .env
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DEBUG: ${WP_DEBUG}
+      WORDPRESS_TABLE_PREFIX: ${DB_TABLE_PREFIX}
+      CACHE_LOC: ${CACHE_LOC}
+      TTL: ${TTL}
+      PURGE_PATH: ${PURGE_PATH}
+      PURGE_KEY: ${PURGE_KEY}
+      BYPASS_HOME: ${BYPASS_HOME}
+      BYPASS_PATH_PREFIXES: ${BYPASS_PATH_PREFIXES}
+      CACHE_RESPONSE_CODES: ${CACHE_RESPONSE_CODES}
+      CADDY_GLOBAL_OPTIONS: |
+        email ${ADMIN_EMAIL}
+        auto_https ${AUTO_HTTPS}
+        debug
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_SITEURL', '${WP_SITEURL}');
+        define('WP_HOME', '${WP_HOME}');
+        define('WP_REDIS_HOST', '${WP_REDIS_HOST}');
+        define('WP_REDIS_PORT', ${WP_REDIS_PORT});
+        define('WP_CACHE', ${WP_CACHE});
+        define('WP_REDIS_PASSWORD', '${WP_REDIS_PASSWORD}');
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    depends_on:
+      - db
+      - redis
+    tty: true
+
+  db:
+    image: mariadb:latest
+    restart: always
+    ports:
+      - "${LOCAL_DB_PORT:-3312}:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - dbwp:/var/lib/mysql
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass "${REDIS_PASSWORD}"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redisdata:/data
+
+volumes:
+  dbwp:
+  redisdata:
